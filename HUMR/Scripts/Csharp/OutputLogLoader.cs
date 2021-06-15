@@ -44,6 +44,10 @@ namespace HUMR
         public bool ExportGenericAnimation = true;
         [TooltipAttribute("モーションを出力したいユーザーの名前を書いてください")]
         public string DisplayName = "";
+        [TooltipAttribute("フレームスキップする（キーフレームを粗くする）場合は 1 以上の値を入力してください")]
+        public int FrameSkip = 0;
+        [TooltipAttribute("読み込み開始フレームを入力してください（通常は 0）")]
+        public int FrameOffset = 0;
 
         public void LoadLogToExportAnim()
         {
@@ -211,7 +215,12 @@ namespace HUMR
 
                     for (int l = 0; l < AnimCurves.Length; l++)//[行数-1]
                     {
-                        AnimCurves[l] = new AnimationCurve(Keyframes[l]);
+                        int step = 0 < FrameSkip ? FrameSkip + 1 : 1;
+                        int offset = 0 < FrameOffset ? FrameOffset : 0;
+                        int n = (nLineNum - offset) / step;
+                        Keyframe[] keyframes = new Keyframe[n];
+                        for (int f = 0; f < n; f++) keyframes[f] = Keyframes[l][offset + f*step]; //フレームスキップ処理
+                        AnimCurves[l] = new AnimationCurve(keyframes);
                     }
                     // AnimationCurveの追加
                     clip.SetCurve(GetHierarchyPath(animator.GetBoneTransform((HumanBodyBones)0)), typeof(Transform), "localPosition.x", AnimCurves[0]);
