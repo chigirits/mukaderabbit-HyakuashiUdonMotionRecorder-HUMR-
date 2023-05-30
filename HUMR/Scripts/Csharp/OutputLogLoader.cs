@@ -32,11 +32,8 @@ namespace HUMR
     {
         Animator animator;
         UnityEditor.Animations.AnimatorController controller;
-        string[] files;
         [HideInInspector]
-        public string OutputLogPath = "";
-        [HideInInspector]
-        public int index = 0;
+        public string LogFilePath = "";
 
         static int nHeaderStrNum = 19;//timestamp example/*2021.01.03 20:57:35*/
         static string strKeyWord = " Log        -  HUMR:";
@@ -65,9 +62,7 @@ namespace HUMR
 
             ControllerSetUp(humrPath);
 
-            string[] files = Directory.GetFiles(OutputLogPath, "*.txt");
-
-            string[] strOutputLogLines = File.ReadAllLines(files[index]);
+            string[] strOutputLogLines = File.ReadAllLines(LogFilePath);
             int nTargetCounter = 0;
             List<int> newTargetLines = new List<int>();//ファイルの中での新しく始まった対象の行を格納する
             newTargetLines.Add(0);
@@ -251,7 +246,7 @@ namespace HUMR
                     string displaynameFolderPath = animFolderPath + "/" + DisplayName;
                     CreateDirectoryIfNotExist(displaynameFolderPath);
 
-                    string animationName = files[index].Substring(files[index].Length - 13).Remove(9)+"_"+i.ToString();
+                    string animationName = LogFilePath.Substring(LogFilePath.Length - 13).Remove(9)+"_"+i.ToString();
                     string animPath = displaynameFolderPath + "/" + animationName + ".anim";
                     Debug.Log(animPath);
 
@@ -290,7 +285,7 @@ namespace HUMR
                 CreateDirectoryIfNotExist(exportFolderPath);
                 string displaynameFBXFolderPath = exportFolderPath + "/" + ValidName(DisplayName);
                 CreateDirectoryIfNotExist(displaynameFBXFolderPath);
-                UnityEditor.Formats.Fbx.Exporter.ModelExporter.ExportObject(displaynameFBXFolderPath + "/" + files[index].Substring(files[index].Length - 13).Remove(9), this.gameObject);
+                UnityEditor.Formats.Fbx.Exporter.ModelExporter.ExportObject(displaynameFBXFolderPath + "/" + LogFilePath.Substring(LogFilePath.Length - 13).Remove(9), this.gameObject);
             }
         }
 

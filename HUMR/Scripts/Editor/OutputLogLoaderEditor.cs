@@ -11,8 +11,11 @@
  * 
  * *****/
 #if UNITY_EDITOR
+using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -25,6 +28,21 @@ namespace HUMR
     {
         string path;
         bool foldout;
+        string[] logFilePaths;
+        string[] logFileNames;
+
+        static Regex filenameRegex = new Regex(@"^output_log_|\.txt$");
+
+        void CollectLogFilePaths()
+        {
+            logFilePaths = Directory.GetFiles(path, "*.txt")
+                .OrderBy(file => File.GetLastWriteTime(Path.Combine(path, file)))
+                .Reverse()
+                .ToArray();
+            logFileNames = logFilePaths
+                .Select(p => filenameRegex.Replace(Path.GetFileName(p), ""))
+                .ToArray();
+        }
 
         public override void OnInspectorGUI()
         {
@@ -37,7 +55,8 @@ namespace HUMR
 
             EditorGUI.BeginChangeCheck();
 
-            foldout = EditorGUILayout.Foldout(foldout, "Advanced : CustomOutputLogPath");
+            var newFoldout = EditorGUILayout.Foldout(foldout, "Advanced : CustomOutputLogPath");
+            if (foldout != newFoldout) logFilePaths = null;
             if (foldout)
             {
                 EditorGUI.indentLevel++;
@@ -49,27 +68,23 @@ namespace HUMR
                 path = System.Environment.GetEnvironmentVariable("USERPROFILE");
                 path += @"\AppData\LocalLow\VRChat\VRChat";
             }
-            targetScript.OutputLogPath = path;
-
-            string[] files = Directory.GetFiles(path, "*.txt");
-            for (int i = 0; i < files.Length; i++)
-            {
-                files[i] = files[i].Substring(files[i].Length - 13).Remove(9);
-            }
-
+            if (logFilePaths == null) CollectLogFilePaths();
+            foldout = newFoldout;
 
             // ラベルの作成
             string label = "LoadOutputLog";
             // 初期値として表示する項目のインデックス番号
-            int selectedIndex = targetScript.index;
+            int selectedIndex = Array.IndexOf(logFilePaths, targetScript.LogFilePath);
+            if (selectedIndex < 0 && 0 < logFilePaths.Length) selectedIndex = 0; 
             // プルダウンメニューの作成
-            int index = files.Length > 0 ? EditorGUILayout.Popup(label, selectedIndex, files)
+            int index = logFilePaths.Length > 0 ? EditorGUILayout.Popup(label, selectedIndex, logFileNames)
                 : -1;
 
             if (EditorGUI.EndChangeCheck())
             {// 操作を Undo に登録
              // インデックス番号を登録
-                targetScript.index = index;
+                targetScript.LogFilePath = logFilePaths[index];
+                logFilePaths = null;
             }
 
             GUILayout.Space(15);
