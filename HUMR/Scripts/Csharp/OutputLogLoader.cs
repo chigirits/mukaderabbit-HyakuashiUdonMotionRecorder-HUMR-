@@ -34,6 +34,8 @@ namespace HUMR
         UnityEditor.Animations.AnimatorController controller;
         [HideInInspector]
         public string LogFilePath = "";
+        [HideInInspector]
+        public int SkipLineNumber = 0;
 
         static int nHeaderStrNum = 19;//timestamp example/*2021.01.03 20:57:35*/
         static string strKeyWord = " Log        -  HUMR:";
@@ -45,7 +47,9 @@ namespace HUMR
         public int FrameSkip = 0;
         [TooltipAttribute("読み込み開始フレームを入力してください（通常は 0）")]
         public int FrameOffset = 0;
-
+        [TooltipAttribute("処理後にSkipLineNumberを自動更新する場合はチェックを入れてください")]
+        public bool AutoUpdateSkipLineNumber = false;
+        
         public void LoadLogToExportAnim()
         {
             if (DisplayName == "")
@@ -63,6 +67,9 @@ namespace HUMR
             ControllerSetUp(humrPath);
 
             string[] strOutputLogLines = File.ReadAllLines(LogFilePath);
+            int oldSkipLineNumber = SkipLineNumber;
+            if (AutoUpdateSkipLineNumber) SkipLineNumber = strOutputLogLines.Length;
+            strOutputLogLines = strOutputLogLines.Skip(oldSkipLineNumber).ToArray();
             int nTargetCounter = 0;
             List<int> newTargetLines = new List<int>();//ファイルの中での新しく始まった対象の行を格納する
             newTargetLines.Add(0);
