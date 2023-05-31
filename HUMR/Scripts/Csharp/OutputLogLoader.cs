@@ -127,7 +127,7 @@ namespace HUMR
                 int nLineNum = newLogLines[i + 1] - newLogLines[i];
                 int nTargetLineNum = newTargetLines[i + 1] - newTargetLines[i];
                 Keyframe[][] Keyframes = new Keyframe[4 * (HumanTrait.BoneName.Length + 1/*time + hip position*/) - 1/*time*/][];//[要素数]
-                Keyframe[][] PoseKeyframes = new Keyframe[HumanTrait.MuscleCount][];//[要素数]
+                Keyframe[][] PoseKeyframes = new Keyframe[HumanTrait.MuscleCount + 7][];//[要素数]
                 for (int j = 0; j < Keyframes.Length; j++)
                 {
                     Keyframes[j] = new Keyframe[nLineNum];//[行数]
@@ -175,10 +175,10 @@ namespace HUMR
                                 float key_time = float.Parse(strSplitedOutPutLog[0]);
                                 Vector3 rootScale = animator.transform.localScale;
                                 Vector3 armatureScale = animator.GetBoneTransform((HumanBodyBones)0).parent.localScale;
-                                Vector3 hippos = new Vector3(float.Parse(strSplitedOutPutLog[1]), float.Parse(strSplitedOutPutLog[2]), float.Parse(strSplitedOutPutLog[3]));
+                                Vector3 hippos0 = new Vector3(float.Parse(strSplitedOutPutLog[1]), float.Parse(strSplitedOutPutLog[2]), float.Parse(strSplitedOutPutLog[3]));
                                 transform.rotation = Quaternion.identity;//Avatarがrotation(0,0,0)でない可能性があるため
-                                hippos = Quaternion.Inverse(animator.GetBoneTransform((HumanBodyBones)0).parent.localRotation) * hippos;//armatureがrotation(0,0,0)でない可能性があるため
-                                hippos = new Vector3(hippos.x / rootScale.x/ armatureScale.x, hippos.y / rootScale.y/ armatureScale.y, hippos.z / rootScale.z/ armatureScale.z); //いる
+                                hippos0 = Quaternion.Inverse(animator.GetBoneTransform((HumanBodyBones)0).parent.localRotation) * hippos0;//armatureがrotation(0,0,0)でない可能性があるため
+                                Vector3 hippos = new Vector3(hippos0.x / rootScale.x/ armatureScale.x, hippos0.y / rootScale.y/ armatureScale.y, hippos0.z / rootScale.z/ armatureScale.z); //いる
                                 Keyframes[0][nTargetLineCounter] = new Keyframe(key_time, hippos.x);
                                 Keyframes[1][nTargetLineCounter] = new Keyframe(key_time, hippos.y);
                                 Keyframes[2][nTargetLineCounter] = new Keyframe(key_time, hippos.z);
@@ -212,9 +212,18 @@ namespace HUMR
  
                                 HumanPose pose = new HumanPose();
                                 humanPoseHandler.GetHumanPose(ref pose);
+                                var rootT = pose.bodyPosition + hippos0;
+                                var rootQ = pose.bodyRotation;
+                                PoseKeyframes[0][nTargetLineCounter] = new Keyframe(key_time, rootT.x);
+                                PoseKeyframes[1][nTargetLineCounter] = new Keyframe(key_time, rootT.y);
+                                PoseKeyframes[2][nTargetLineCounter] = new Keyframe(key_time, rootT.z);
+                                PoseKeyframes[3][nTargetLineCounter] = new Keyframe(key_time, rootQ.x);
+                                PoseKeyframes[4][nTargetLineCounter] = new Keyframe(key_time, rootQ.y);
+                                PoseKeyframes[5][nTargetLineCounter] = new Keyframe(key_time, rootQ.z);
+                                PoseKeyframes[6][nTargetLineCounter] = new Keyframe(key_time, rootQ.w);
                                 for (int m = 0; m < HumanTrait.MuscleCount; m++)
                                 {
-                                    PoseKeyframes[m][nTargetLineCounter] = new Keyframe(key_time, pose.muscles[m]);
+                                    PoseKeyframes[m + 7][nTargetLineCounter] = new Keyframe(key_time, pose.muscles[m]);
                                 }
                             }
                             else
@@ -244,9 +253,16 @@ namespace HUMR
                         AnimCurves[l] = new AnimationCurve(keyframes);
                     }
                     // AnimationCurveの追加
-                    for (int m = 0; m < AnimCurves.Length; m++)//[骨数]
+                    clip.SetCurve("", typeof(Animator), "RootT.x", AnimCurves[0]);
+                    clip.SetCurve("", typeof(Animator), "RootT.y", AnimCurves[1]);
+                    clip.SetCurve("", typeof(Animator), "RootT.z", AnimCurves[2]);
+                    clip.SetCurve("", typeof(Animator), "RootQ.x", AnimCurves[3]);
+                    clip.SetCurve("", typeof(Animator), "RootQ.y", AnimCurves[4]);
+                    clip.SetCurve("", typeof(Animator), "RootQ.z", AnimCurves[5]);
+                    clip.SetCurve("", typeof(Animator), "RootQ.w", AnimCurves[6]);
+                    for (int m = 7; m < AnimCurves.Length; m++)//[骨数]
                     {
-                        clip.SetCurve("", typeof(Animator), HumanTrait.MuscleName[m], AnimCurves[m]);
+                        clip.SetCurve("", typeof(Animator), HumanTrait.MuscleName[m-7], AnimCurves[m]);
                     }
                     clip.EnsureQuaternionContinuity();//これをしないとQuaternion補間してくれない
                 }
