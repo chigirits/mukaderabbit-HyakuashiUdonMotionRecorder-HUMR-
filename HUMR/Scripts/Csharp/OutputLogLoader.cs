@@ -41,6 +41,10 @@ namespace HUMR
         static string strKeyWord = " Log        -  HUMR:";
         [TooltipAttribute("GenericAnimationを出力する場合はチェックを入れてください(チェックがないと複数のAnimationを出力できません)")]
         public bool ExportGenericAnimation = true;
+        [TooltipAttribute("GenericAnimationの代わりにHumanoidAnimationを出力する場合はチェックを入れてください")]
+        public bool HumanoidInsteadOfGeneric = false;
+        [TooltipAttribute("FBXを出力する場合はチェックを入れてください")]
+        public bool ExportFBX = true;
         [TooltipAttribute("モーションを出力したいユーザーの名前を書いてください")]
         public string DisplayName = "";
         [TooltipAttribute("フレームスキップする（キーフレームを粗くする）場合は 1 以上の値を入力してください")]
@@ -116,14 +120,21 @@ namespace HUMR
                 return;
             }
 
+            HumanPoseHandler humanPoseHandler = new HumanPoseHandler(animator.avatar, animator.transform);
+
             for (int i =0; i<newLogLines.Count-1;i++)
             {
                 int nLineNum = newLogLines[i + 1] - newLogLines[i];
                 int nTargetLineNum = newTargetLines[i + 1] - newTargetLines[i];
                 Keyframe[][] Keyframes = new Keyframe[4 * (HumanTrait.BoneName.Length + 1/*time + hip position*/) - 1/*time*/][];//[要素数]
+                Keyframe[][] PoseKeyframes = new Keyframe[HumanTrait.MuscleCount][];//[要素数]
                 for (int j = 0; j < Keyframes.Length; j++)
                 {
                     Keyframes[j] = new Keyframe[nLineNum];//[行数]
+                }
+                for (int j = 0; j < PoseKeyframes.Length; j++)
+                {
+                    PoseKeyframes[j] = new Keyframe[nLineNum];//[行数]
                 }
 
                 //Keyframeにログの値を入れていく
@@ -198,6 +209,13 @@ namespace HUMR
                                     Keyframes[k * 4 + 5][nTargetLineCounter] = new Keyframe(key_time, localrot.z);
                                     Keyframes[k * 4 + 6][nTargetLineCounter] = new Keyframe(key_time, localrot.w);
                                 }
+ 
+                                HumanPose pose = new HumanPose();
+                                humanPoseHandler.GetHumanPose(ref pose);
+                                for (int m = 0; m < HumanTrait.MuscleCount; m++)
+                                {
+                                    PoseKeyframes[m][nTargetLineCounter] = new Keyframe(key_time, pose.muscles[m]);
+                                }
                             }
                             else
                             {
@@ -211,6 +229,28 @@ namespace HUMR
 
                 //AnimationClipにAnimationCurveを設定
                 AnimationClip clip = new AnimationClip();
+                if (HumanoidInsteadOfGeneric)
+                {
+                    // AnimationCurveの生成
+                    AnimationCurve[] AnimCurves = new AnimationCurve[PoseKeyframes.Length];
+
+                    for (int l = 0; l < AnimCurves.Length; l++)//[行数-1]
+                    {
+                        int step = 0 < FrameSkip ? FrameSkip + 1 : 1;
+                        int offset = 0 < FrameOffset ? FrameOffset : 0;
+                        int n = (nLineNum - offset) / step;
+                        Keyframe[] keyframes = new Keyframe[n];
+                        for (int f = 0; f < n; f++) keyframes[f] = PoseKeyframes[l][offset + f*step]; //フレームスキップ処理
+                        AnimCurves[l] = new AnimationCurve(keyframes);
+                    }
+                    // AnimationCurveの追加
+                    for (int m = 0; m < AnimCurves.Length; m++)//[骨数]
+                    {
+                        clip.SetCurve("", typeof(Animator), HumanTrait.MuscleName[m], AnimCurves[m]);
+                    }
+                    clip.EnsureQuaternionContinuity();//これをしないとQuaternion補間してくれない
+                }
+                else
                 {
                     // AnimationCurveの生成
                     AnimationCurve[] AnimCurves = new AnimationCurve[Keyframes.Length];
@@ -248,7 +288,7 @@ namespace HUMR
 
                 //GenericAnimation出力
                 {
-                    string animFolderPath = humrPath + @"/GenericAnimations";
+                    string animFolderPath = humrPath + (HumanoidInsteadOfGeneric ? @"/HumanoidAnimations" : @"/GenericAnimations");
                     CreateDirectoryIfNotExist(animFolderPath);
                     string displaynameFolderPath = animFolderPath + "/" + DisplayName;
                     CreateDirectoryIfNotExist(displaynameFolderPath);
@@ -262,7 +302,7 @@ namespace HUMR
                         if (File.Exists(animPath))
                         {
                             AssetDatabase.DeleteAsset(animPath);
-                            Debug.LogWarning("Same Name Generic Animation is existing. Overwritten!!");
+                            Debug.LogWarning("Same Name " + (HumanoidInsteadOfGeneric ? "Humanoid" : "Generic") + " Animation is existing. Overwritten!!");
                             foreach (var layer in controller.layers)//アニメーションを消したことにより空のアニメーションステートが出来てたら削除
                             {
                                 foreach (var state in layer.stateMachine.states)
@@ -286,6 +326,7 @@ namespace HUMR
                 }
             }
             //FBXとして出力
+            if (ExportFBX)
             {
                 animator.runtimeAnimatorController = controller;
                 string exportFolderPath = humrPath + @"/FBXs";
