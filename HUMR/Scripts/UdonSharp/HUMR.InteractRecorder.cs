@@ -104,6 +104,7 @@ namespace HUMR
             isRecording = !isRecording;
             DisplayRecording.SetActive(isRecording);
             DisplayStopping.SetActive(!isRecording);
+            InteractionText = isRecording ? "Stop" : "Record";
         }
 
     }
