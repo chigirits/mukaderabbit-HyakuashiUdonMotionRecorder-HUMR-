@@ -14,6 +14,7 @@ using VRC.SDKBase;
 using VRC.Udon;
 namespace HUMR
 {
+    [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     public class Recorder : UdonSharpBehaviour
     {
         [SerializeField,TooltipAttribute("チェックを入れるとワールド内の全ての人のモーションが記録されます（周知を推奨）")]
