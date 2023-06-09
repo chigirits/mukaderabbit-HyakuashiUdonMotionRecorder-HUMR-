@@ -56,6 +56,33 @@ namespace HUMR
         [TooltipAttribute("処理後にSkipLineNumberを自動更新する場合はチェックを入れてください")]
         public bool AutoUpdateSkipLineNumber = false;
         
+        static string[] muscleName;
+
+        static string[] MuscleName
+        {
+            get
+            {
+                if (muscleName != null) return muscleName;
+                muscleName = HumanTrait.MuscleName;
+                var muscleNameReplacer = new Dictionary<string, string>();
+                foreach (var lr in "Left Right".Split(' '))
+                {
+                    foreach (var f in "Thumb Index Middle Ring Little".Split(' '))
+                    {
+                        muscleNameReplacer[$"{lr} {f} Spread"] = $"{lr}Hand.{f}.Spread";
+                        for (var i=1; i<=3; i++)
+                            muscleNameReplacer[$"{lr} {f} {i} Stretched"] = $"{lr}Hand.{f}.{i} Stretched";
+                    }
+                }
+                for (var i=0; i<muscleName.Length; i++)
+                {
+                    var name = muscleName[i];
+                    if (muscleNameReplacer.ContainsKey(name)) muscleName[i] = muscleNameReplacer[name];
+                }
+                return muscleName;
+            }
+        }
+
         public void LoadLogToExportAnim()
         {
             if (DisplayName == "")
@@ -268,7 +295,7 @@ namespace HUMR
                     clip.SetCurve("", typeof(Animator), "RootQ.w", AnimCurves[6]);
                     for (int m = 7; m < AnimCurves.Length; m++)//[骨数]
                     {
-                        clip.SetCurve("", typeof(Animator), HumanTrait.MuscleName[m-7], AnimCurves[m]);
+                        clip.SetCurve("", typeof(Animator), MuscleName[m-7], AnimCurves[m]);
                     }
                     clip.EnsureQuaternionContinuity();//これをしないとQuaternion補間してくれない
                 }
