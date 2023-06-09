@@ -154,6 +154,15 @@ namespace HUMR
             }
 
             HumanPoseHandler humanPoseHandler = new HumanPoseHandler(animator.avatar, animator.transform);
+            var revertHipsPosition = animator.GetBoneTransform(HumanBodyBones.Hips).position;
+            var revertBoneRotation = new Quaternion?[(int)HumanBodyBones.LastBone];
+            for (var i=0; i<revertBoneRotation.Length; i++)
+            {
+                var b = (HumanBodyBones)i;
+                var r = animator.GetBoneTransform(b)?.rotation;
+                if (!r.HasValue) Debug.LogWarning($"Bone not found: {b}");
+                revertBoneRotation[i] = r;
+            }
 
             for (int i =0; i<newLogLines.Count-1;i++)
             {
@@ -384,6 +393,11 @@ namespace HUMR
                 CreateDirectoryIfNotExist(displaynameFBXFolderPath);
                 UnityEditor.Formats.Fbx.Exporter.ModelExporter.ExportObject(displaynameFBXFolderPath + "/" + LogFilePath.Substring(LogFilePath.Length - 13).Remove(9), this.gameObject);
             }
+
+            animator.GetBoneTransform(HumanBodyBones.Hips).position = revertHipsPosition;
+            for (var i=0; i<revertBoneRotation.Length; i++)
+                if (revertBoneRotation[i].HasValue)
+                    animator.GetBoneTransform((HumanBodyBones)i).rotation = revertBoneRotation[i].Value;
         }
 
         //ファイル名やパスに使えない文字を‗に置換
