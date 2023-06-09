@@ -344,6 +344,15 @@ namespace HUMR
                     clip.EnsureQuaternionContinuity();//これをしないとQuaternion補間してくれない
                 }
 
+                {
+                    var settings = AnimationUtility.GetAnimationClipSettings(clip);
+                    settings.keepOriginalOrientation = true;
+                    settings.keepOriginalPositionXZ = true;
+                    settings.keepOriginalPositionY = true;
+                    AnimationUtility.SetAnimationClipSettings(clip, settings);                    
+                    EditorUtility.SetDirty(clip);
+                }
+
                 //GenericAnimation出力
                 {
                     string animFolderPath = savePath + (HumanoidInsteadOfGeneric ? @"/HumanoidAnimations" : @"/GenericAnimations");
