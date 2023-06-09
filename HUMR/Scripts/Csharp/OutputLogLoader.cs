@@ -218,9 +218,10 @@ namespace HUMR
                                 Vector3 rootScale = animator.transform.localScale;
                                 Vector3 armatureScale = animator.GetBoneTransform((HumanBodyBones)0).parent.localScale;
                                 Vector3 hippos0 = new Vector3(float.Parse(strSplitedOutPutLog[1]), float.Parse(strSplitedOutPutLog[2]), float.Parse(strSplitedOutPutLog[3]));
+                                animator.GetBoneTransform(HumanBodyBones.Hips).position = hippos0;
                                 transform.rotation = Quaternion.identity;//Avatarがrotation(0,0,0)でない可能性があるため
-                                hippos0 = Quaternion.Inverse(animator.GetBoneTransform((HumanBodyBones)0).parent.localRotation) * hippos0;//armatureがrotation(0,0,0)でない可能性があるため
-                                Vector3 hippos = new Vector3(hippos0.x / rootScale.x/ armatureScale.x, hippos0.y / rootScale.y/ armatureScale.y, hippos0.z / rootScale.z/ armatureScale.z); //いる
+                                var hippos = Quaternion.Inverse(animator.GetBoneTransform((HumanBodyBones)0).parent.localRotation) * hippos0;//armatureがrotation(0,0,0)でない可能性があるため
+                                hippos = new Vector3(hippos.x / rootScale.x/ armatureScale.x, hippos.y / rootScale.y/ armatureScale.y, hippos.z / rootScale.z/ armatureScale.z); //いる
                                 Keyframes[0][nTargetLineCounter] = new Keyframe(key_time, hippos.x);
                                 Keyframes[1][nTargetLineCounter] = new Keyframe(key_time, hippos.y);
                                 Keyframes[2][nTargetLineCounter] = new Keyframe(key_time, hippos.z);
@@ -254,7 +255,7 @@ namespace HUMR
  
                                 HumanPose pose = new HumanPose();
                                 humanPoseHandler.GetHumanPose(ref pose);
-                                var rootT = pose.bodyPosition + hippos0;
+                                var rootT = pose.bodyPosition;
                                 var rootQ = pose.bodyRotation;
                                 PoseKeyframes[0][nTargetLineCounter] = new Keyframe(key_time, rootT.x);
                                 PoseKeyframes[1][nTargetLineCounter] = new Keyframe(key_time, rootT.y);
