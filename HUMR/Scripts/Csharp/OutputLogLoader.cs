@@ -37,6 +37,8 @@ namespace HUMR
         [HideInInspector]
         public int SkipLineNumber = 0;
 
+        public string savePath = @"Assets/HUMR";
+
         static int nHeaderStrNum = 19;//timestamp example/*2021.01.03 20:57:35*/
         static string strKeyWord = " Log        -  HUMR:";
         [TooltipAttribute("GenericAnimationを出力する場合はチェックを入れてください(チェックがないと複数のAnimationを出力できません)")]
@@ -65,10 +67,9 @@ namespace HUMR
             {
                 animator = GetComponent<Animator>();
             }
-            string humrPath = @"Assets/HUMR";
-            CreateDirectoryIfNotExist(humrPath);
+            CreateDirectoryIfNotExist(savePath);
 
-            ControllerSetUp(humrPath);
+            ControllerSetUp(savePath);
 
             var readLines = new List<string>();
             using (var fs = new FileStream(LogFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -309,7 +310,7 @@ namespace HUMR
 
                 //GenericAnimation出力
                 {
-                    string animFolderPath = humrPath + (HumanoidInsteadOfGeneric ? @"/HumanoidAnimations" : @"/GenericAnimations");
+                    string animFolderPath = savePath + (HumanoidInsteadOfGeneric ? @"/HumanoidAnimations" : @"/GenericAnimations");
                     CreateDirectoryIfNotExist(animFolderPath);
                     string displaynameFolderPath = animFolderPath + "/" + DisplayName;
                     CreateDirectoryIfNotExist(displaynameFolderPath);
@@ -350,7 +351,7 @@ namespace HUMR
             if (ExportFBX)
             {
                 animator.runtimeAnimatorController = controller;
-                string exportFolderPath = humrPath + @"/FBXs";
+                string exportFolderPath = savePath + @"/FBXs";
                 CreateDirectoryIfNotExist(exportFolderPath);
                 string displaynameFBXFolderPath = exportFolderPath + "/" + ValidName(DisplayName);
                 CreateDirectoryIfNotExist(displaynameFBXFolderPath);
@@ -371,9 +372,9 @@ namespace HUMR
             return strValid;
         }
 
-        void ControllerSetUp(string humrPath)
+        void ControllerSetUp(string savePath)
         {
-            string tmpAniConPath = humrPath + @"/AnimationController";
+            string tmpAniConPath = savePath + @"/AnimationController";
             if (controller == null)
             {
                 CreateDirectoryIfNotExist(tmpAniConPath);
