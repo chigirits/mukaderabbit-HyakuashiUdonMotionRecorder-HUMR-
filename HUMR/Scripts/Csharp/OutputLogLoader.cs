@@ -70,10 +70,15 @@ namespace HUMR
 
             ControllerSetUp(humrPath);
 
-            string[] strOutputLogLines = File.ReadAllLines(LogFilePath);
+            var readLines = new List<string>();
+            using (var fs = new FileStream(LogFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var sr = new StreamReader(fs))
+                    while (0 <= sr.Peek()) readLines.Add(sr.ReadLine());
+
+
             int oldSkipLineNumber = SkipLineNumber;
-            if (AutoUpdateSkipLineNumber) SkipLineNumber = strOutputLogLines.Length;
-            strOutputLogLines = strOutputLogLines.Skip(oldSkipLineNumber).ToArray();
+            if (AutoUpdateSkipLineNumber) SkipLineNumber = readLines.Count();
+            var strOutputLogLines = readLines.Skip(oldSkipLineNumber).ToArray();
             int nTargetCounter = 0;
             List<int> newTargetLines = new List<int>();//ファイルの中での新しく始まった対象の行を格納する
             newTargetLines.Add(0);
